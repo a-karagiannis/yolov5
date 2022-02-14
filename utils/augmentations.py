@@ -21,6 +21,7 @@ class Albumentations:
             import albumentations as A
             check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
+            '''
             self.transform = A.Compose([
                 A.Blur(p=0.01),
                 A.MedianBlur(p=0.01),
@@ -30,7 +31,31 @@ class Albumentations:
                 A.RandomGamma(p=0.0),
                 A.ImageCompression(quality_lower=75, p=0.0)],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
-
+            '''
+            
+            self.transform = A.Compose(
+                [A.Compose([A.RandomResizedCrop(*get_zoom_crop_dimensions(), p=1.0),
+                            A.Resize(height=640, width=640, p=1.0),
+                            ], p=0.15),
+                 A.Rotate(limit=[-90, 90], interpolation=cv2.INTER_CUBIC,
+                          border_mode=cv2.BORDER_REFLECT_101,
+                          p=0.15),
+                 A.HorizontalFlip(p=0.15),
+                 A.VerticalFlip(p=0.15),
+                 A.Perspective(scale=(0.1, 0.2), p=0.15),
+                 
+                 A.GaussNoise(p=0.15),
+                 A.RandomGamma(p=0.15),
+                 A.GaussianBlur(blur_limit=(3, 7), sigma_limit=0.9, p=0.15),
+                 A.MedianBlur(blur_limit=7, p=0.15),
+                 A.MotionBlur(blur_limit=(3, 7), p=0.15),
+                 A.CLAHE(p=0.15),
+                 A.Sharpen(alpha=(0.1, 0.3), lightness=(0.1, 1.0), p=0.15),
+                 A.Emboss(alpha=(0.2, 0.5), strength=(0.2, 0.7), p=0.15),
+                 A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.5, p=0.15)
+                ], p=1,
+                bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))            
+            
             LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
         except ImportError:  # package not installed, skip
             pass
@@ -43,6 +68,10 @@ class Albumentations:
             im, labels = new['image'], np.array([[c, *b] for c, b in zip(new['class_labels'], new['bboxes'])])
         return im, labels
 
+    def get_zoom_crop_dimensions():
+        scale = np.random.uniform(0.8, 1.2)
+        height, width = [scale * x for x in [640, 640]]
+        return int(height), int(width)
 
 def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
     # HSV color-space augmentation
