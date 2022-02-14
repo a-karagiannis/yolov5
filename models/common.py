@@ -49,6 +49,26 @@ class Conv(nn.Module):
     def forward_fuse(self, x):
         return self.act(self.conv(x))
 
+'''
+class DenseBlock(nn.Module):
+    def __init__(self, nb_layers, in_planes, growth_rate, block, dropRate=0.0):
+        super(DenseBlock, self).__init__()
+        
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c_, c2, 3, 1)
+        self.dcbl = self.cv2(self.cv1(x))
+        
+        self.layer = self._make_layer(self.dcbl, nb_layers, in_planes, growth_rate, dropRate)
+        
+    def _make_layer(self, block, nb_layers, in_planes, growth_rate, dropRate):
+        layers = []
+        for i in range(nb_layers):
+            layers.append(block(in_planes+i*growth_rate, growth_rate, dropRate))
+        return nn.Sequential(*layers)
+      
+    def forward(self, x):
+        return self.layer(x)      
+'''
 
 class DWConv(Conv):
     # Depth-wise convolution class
@@ -122,8 +142,7 @@ class BottleneckCSP(nn.Module):
         y1 = self.cv3(self.m(self.cv1(x)))
         y2 = self.cv2(x)
         return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
-
-
+      
 class C3(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
